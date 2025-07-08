@@ -1,0 +1,17 @@
+[project]
+name = "e33a2eeeb9e69ccce9e871fb11133de4856d640937543497fe75954637fa20c8-obesity-risk-classification"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dice-ml",
+    "imbalanced-learn",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "seaborn",
+    "shap",
+    "xgboost",
+]
