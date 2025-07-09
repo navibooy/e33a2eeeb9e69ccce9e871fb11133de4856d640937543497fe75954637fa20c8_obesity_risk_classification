@@ -1,5 +1,6 @@
-from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
+from sklearn.model_selection import train_test_split
+
 
 def split_and_engineer_features(preprocessed_df, resample=True, random_seed=42):
     """
@@ -16,15 +17,15 @@ def split_and_engineer_features(preprocessed_df, resample=True, random_seed=42):
     """
     # Convert target to numeric
     label_mapping = {
-        'Underweight': 0,
-        'Normal_weight': 1,
-        'Overweight': 2,
-        'Obesity': 3
+        "Underweight": 0,
+        "Normal_weight": 1,
+        "Overweight": 2,
+        "Obesity": 3,
     }
 
     # Drop irrelevant features and map target labels
     df = preprocessed_df.drop(columns=["BMI", "Height", "Weight", "BodyFat_Percentage"])
-    df['obesity_type'] = df['obesity_type'].map(label_mapping)
+    df["obesity_type"] = df["obesity_type"].map(label_mapping)
 
     # Set up target and features
     df.set_index("id", inplace=True)
@@ -42,10 +43,10 @@ def split_and_engineer_features(preprocessed_df, resample=True, random_seed=42):
         X_train, y_train = ros.fit_resample(X_train, y_train)
 
     # Print shapes for confirmation
-    print(f"✅ Data split complete:")
+    print("✅ Data split complete:")
     print(f"   X_train shape: {X_train.shape}")
     print(f"   X_test  shape: {X_test.shape}")
     print(f"   y_train shape: {y_train.shape}")
     print(f"   y_test  shape: {y_test.shape}")
-    
+
     return X_train, X_test, y_train, y_test

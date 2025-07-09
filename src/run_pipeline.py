@@ -1,11 +1,13 @@
-import sys
 import os
+import sys
+
 sys.path.append(os.path.dirname(__file__))
 
 from data_preprocessing import read_and_preprocess_data
+from evaluation import evaluate_model
 from feature_engineering import split_and_engineer_features
 from model_training import train_model
-from evaluation import evaluate_model
+
 
 def main():
     # Step 1: Preprocess the raw data
@@ -18,17 +20,14 @@ def main():
 
     # Step 3: Train the model and save it
     print("🚀 Training model...")
-    model = train_model(X_train, y_train)
+    train_model(X_train, y_train)
 
     # Step 4: Evaluate the model and save metrics + confusion matrix
     print("📊 Evaluating model...")
-    evaluate_model(
-        model_path="models/model.pkl",
-        X_test=X_test,
-        y_test=y_test
-    )
+    evaluate_model(model_path="models/model.pkl", X_test=X_test, y_test=y_test)
 
     print("✅ Pipeline execution complete.")
+
 
 if __name__ == "__main__":
     main()

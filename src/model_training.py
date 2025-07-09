@@ -1,36 +1,53 @@
-import time
 import os
+import time
+
 import joblib
-from xgboost import XGBClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from xgboost import XGBClassifier
 
 # Define your feature groups
-numerical_cols = ['Age', 'veg_consumption', 'main_meals_daily', 'water_daily', 'physical_weekly', 'tech_usage_daily']
-ordinal_cols = ['snack_consumption', 'alcohol_consumption']
-binary_cols = ['Gender', 'family_history_with_overweight', 'highcal_consumption', 'SMOKE', 'track_cal_intake']
-categorical_cols = ['transport_mode']
+numerical_cols = [
+    "Age",
+    "veg_consumption",
+    "main_meals_daily",
+    "water_daily",
+    "physical_weekly",
+    "tech_usage_daily",
+]
+ordinal_cols = ["snack_consumption", "alcohol_consumption"]
+binary_cols = [
+    "Gender",
+    "family_history_with_overweight",
+    "highcal_consumption",
+    "SMOKE",
+    "track_cal_intake",
+]
+categorical_cols = ["transport_mode"]
 onehot_cols = binary_cols + categorical_cols
 
 # Encoders
 ordinal = OrdinalEncoder(
     categories=[
-        ['no', 'Sometimes', 'Frequently', 'Always'],
-        ['no', 'Sometimes', 'Frequently']
+        ["no", "Sometimes", "Frequently", "Always"],
+        ["no", "Sometimes", "Frequently"],
     ],
-    handle_unknown='use_encoded_value',
-    unknown_value=-1
+    handle_unknown="use_encoded_value",
+    unknown_value=-1,
 )
 
-onehot = OneHotEncoder(handle_unknown='ignore')
+onehot = OneHotEncoder(handle_unknown="ignore")
 
 # ColumnTransformer
-encoder = ColumnTransformer(transformers=[
-    ('numerical', 'passthrough', numerical_cols),
-    ('ordinal', ordinal, ordinal_cols),
-    ('onehot', onehot, onehot_cols)
-])
+encoder = ColumnTransformer(
+    transformers=[
+        ("numerical", "passthrough", numerical_cols),
+        ("ordinal", ordinal, ordinal_cols),
+        ("onehot", onehot, onehot_cols),
+    ]
+)
+
 
 def train_model(X_train, y_train, save_path="models/model.pkl", random_seed=42):
     """
@@ -53,19 +70,16 @@ def train_model(X_train, y_train, save_path="models/model.pkl", random_seed=42):
     """
     # Use best parameters from RandomizedSearch
     xgb = XGBClassifier(
-        booster='gbtree',
+        booster="gbtree",
         random_state=random_seed,
         learning_rate=0.3,
         max_depth=7,
         subsample=0.75,
         reg_lambda=0.1,
-        reg_alpha=0
+        reg_alpha=0,
     )
 
-    model_pipeline = Pipeline([
-        ('encoder', encoder),
-        ('xgb', xgb)
-    ])
+    model_pipeline = Pipeline([("encoder", encoder), ("xgb", xgb)])
 
     # Train model
     start_time = time.time()
