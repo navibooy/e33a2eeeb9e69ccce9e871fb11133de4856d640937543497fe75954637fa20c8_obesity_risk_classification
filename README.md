@@ -14,7 +14,7 @@ data/raw/obesity_data.csv
 ```
 
 ## Setup Instructions
-We used **UV** (a modern package and environment manager) for setting up a clean and reproducible virtual environment.
+I used **UV** (a modern package and environment manager) for setting up a clean and reproducible virtual environment.
 
 ### Step 1: Install UV (if not yet installed)
 ```bash
@@ -44,6 +44,10 @@ uv pip list
 ### Step 6: Install and enable pre-commit hooks
 ```bash
 pre-commit install
+```
+### Step 7: Run the prediction and evaluate model
+```bash
+python src/run_pipeline.py
 ```
 
 # Folder Structure
