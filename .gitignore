@@ -1,14 +1,36 @@
-# Ignore virtual environment
+# ✅ Virtual environment
 .venv/
 
-# Byte-compiled / cache files
+# ✅ Python bytecode
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
 
-# Jupyter Notebook checkpoints
+# ✅ Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
 
-# System files
+# ✅ System/IDE files
 .DS_Store
 Thumbs.db
+.vscode/
+*.swp
+*.swo
+
+# ✅ Ruff/Black/Isort or other tool caches
+.ruff_cache/
+*.coverage
+
+# ✅ Logs and outputs
+logs/
+*.log
+
+# ✅ Model artifacts
+models/
+*.pkl
+*.joblib
+
+# ✅ Pre-commit & pip tools
+.uv/
+.venv/
+*.lock
