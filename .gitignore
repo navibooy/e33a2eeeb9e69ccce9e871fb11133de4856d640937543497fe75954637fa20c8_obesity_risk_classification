@@ -34,3 +34,5 @@ models/
 .uv/
 .venv/
 *.lock
+
+/tests/fixtures/sample_obesity_data.csv

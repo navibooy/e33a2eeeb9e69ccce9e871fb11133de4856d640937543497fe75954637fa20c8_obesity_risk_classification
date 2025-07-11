@@ -28,4 +28,11 @@ profile = "black"
 
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
 extend-select = ["I"]  # for import sorting (matches isort)
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
