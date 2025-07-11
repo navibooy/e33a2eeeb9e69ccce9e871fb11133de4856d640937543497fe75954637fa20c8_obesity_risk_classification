@@ -1,12 +1,11 @@
 import os
 
-import pandas as pd
-
+from src.data_preprocessing import read_and_preprocess_data
 from src.model_training import train_model
 
 
 def test_train_model_creates_file():
-    df = pd.read_csv("tests/fixtures/sample_obesity_data.csv")
+    df = read_and_preprocess_data("tests/fixtures/sample_obesity_data.csv")
     # Minimal label engineering for test
     df["obesity_type"] = df["NObeyesdad"].map(
         {

@@ -1,13 +1,12 @@
 import os
 
-import pandas as pd
-
+from src.data_preprocessing import read_and_preprocess_data
 from src.evaluation import evaluate_model
 from src.model_training import train_model
 
 
 def test_evaluate_model_creates_reports():
-    df = pd.read_csv("tests/fixtures/sample_obesity_data.csv")
+    df = read_and_preprocess_data("tests/fixtures/sample_obesity_data.csv")
     df["obesity_type"] = df["NObeyesdad"].map(
         {
             "Insufficient_Weight": 0,

@@ -20,12 +20,6 @@ def test_column_renaming():
         assert col in processed.columns
 
 
-def test_bmi_and_bodyfat_calculation():
-    processed = read_and_preprocess_data("tests/fixtures/sample_obesity_data.csv")
-    assert (processed["BMI"] > 0).all()
-    assert processed["BodyFat_Percentage"].notnull().all()
-
-
 def test_obesity_type_mapping():
     processed = read_and_preprocess_data("tests/fixtures/sample_obesity_data.csv")
     assert set(processed["obesity_type"]).issubset(

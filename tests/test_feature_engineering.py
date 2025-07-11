@@ -1,10 +1,12 @@
 import pandas as pd
 
+from src.data_preprocessing import read_and_preprocess_data
 from src.feature_engineering import split_and_engineer_features
 
 
 def test_split_shapes_match():
     df = pd.read_csv("tests/fixtures/sample_obesity_data.csv")
+    df = read_and_preprocess_data(df)
     X_train, X_test, y_train, y_test = split_and_engineer_features(df)
 
     # Validate label/feature alignment
