@@ -73,11 +73,42 @@ python src/run_pipeline.py
 The modular folder structure reflects each step in the ML lifecycle (from data to model to reporting), making the project maintainable, reproducible, and aligned with MLOps practices.
 
 # Pre-commit Configuration
-We use pre-commit to enforce clean, consistent, and professional code at every commit:
-`black`: Enforces consistent code formatting
+We use pre-commit to enforce code quality and consistency automatically before every commit. This ensures that all contributors follow the same standards, and the codebase stays clean, readable, and production-ready.
 
-`ruff`: Fast linter for code issues (e.g., unused variables, import errors)
+`black`: Auto-formats Python code to a uniform style using PEP 8 rules. Helps prevent debates over spacing, quotes, etc.
 
-`isort`: Sorts and organizes imports logically
+`ruff`: A fast linter that detects issues like unused variables, undefined names, and stylistic errors. Replaces multiple linters like `flake8`, `pycodestyle`, and `pylint`.
+
+`isort`: Automatically sorts and groups Python imports (standard, third-party, local) to improve readability and prevent merge conflicts.
 
 `pre-commit-hooks`: Fixes trailing whitespace, YAML errors, large file commits, etc.
+
+# Optional: Unit Testing with Pytest
+This project uses `pytest` for unit testing to ensure code correctness and stability.
+
+### Step 1: Install Pytest (if not yet installed)
+```bash
+uv add --dev pytest
+```
+### Step 2: Run Tests
+Run all test:
+```bash
+pytest
+```
+OR add verbosity for clearer output:
+```bash
+pytest -v --tb=short
+```
+
+# Reflection
+Throughout my journey in the Masters of Data Science at AIM, one question has persistently sparked my curiosity: *How are models actually deployed and made useful for end-users?* Until now, our model pipelines has primarily lived within Jupyter notebooks which is not ideal for production environments. This course has been particularly exciting because it addresses that curiosity by exposing us to the tools and workflows involved in deploying machine learning models effectively.
+
+One of the biggest learning milestones for me was diving into Git and GitHub. While I've used version control before at a basic level, this was the first time I truly understood how essential it is for structuring production-ready machine learning projects. The emphasis on clean, trackable, and collaborative development using these tools was eye-opening and very practical for industry scenarios.
+
+My passion for automation made me especially enthusiastic about learning how `.yaml` configuration files work, how to structure directories properly, and how to write modular, reusable code to support both data and model pipelines. These are foundational skills for creating scalable ML systems, and I found great satisfaction in putting them into practice.
+
+With this I have also encoutered challenges in this project. Setting up the virtual environment using `uv` was new for me, and understanding how `pyproject.toml` works required additional research. I also ran into issues with pre-commit hooks—specifically, a loop where failed checks would revert my staged commits. This forced me to debug and tweak the `.pre-commit-config.yaml` file, teaching me how important it is to understand configuration and dependency management at a deeper level.
+
+Another significant learning point was revisiting old, non-modular code I had written before. Refactoring it to be more atomic and maintainable was a valuable exercise that showed me how much better modular design is for testing, debugging, and scaling.
+
+Looking ahead, I'm excited to continue exploring tools like Apache Airflow, Docker, and MLflow, which are powerful enablers of automation, reproducibility, and collaborative workflows in real-world ML operations.
