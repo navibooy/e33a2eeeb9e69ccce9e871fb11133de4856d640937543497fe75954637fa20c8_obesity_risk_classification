@@ -3,7 +3,7 @@
 ## Project Overview
 This project aims to develop a production-driven machine learning pipeline that classifies individuals into one of four obesity risk categories: Underweight, Normal weight, Overweight, and Obese. The goal is to simulate an end-to-end MLOps workflow from data acquisition to model evaluation and automation of code quality checks.
 
-We chose the Kaggle Playground Series - Season 4, Episode 2 dataset for several reasons: (1) It contains real-world health and lifestyle attributes that influence obesity, making it suitable for feature engineering, model tuning, and fairness considerations; (2) The dataset is manageable in size (<100MB) and suitable for training with popular models like XGBoost, which aligns well with our coursework objectives.
+I chose the Kaggle Playground Series - Season 4, Episode 2 dataset for several reasons: (1) It contains real-world health and lifestyle attributes that influence obesity, making it suitable for feature engineering, model tuning, and fairness considerations; (2) The dataset is manageable in size (<100MB) and suitable for training with popular models like XGBoost, which aligns well with our coursework objectives.
 
 ## How to Get the Data
 1. Visit the competition page on Kaggle:
