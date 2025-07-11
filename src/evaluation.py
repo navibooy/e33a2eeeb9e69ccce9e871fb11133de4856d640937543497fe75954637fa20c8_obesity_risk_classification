@@ -2,8 +2,12 @@ import os
 
 import joblib
 import matplotlib.pyplot as plt
-from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
-                             classification_report, confusion_matrix)
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+)
 
 
 def evaluate_model(
@@ -13,6 +17,27 @@ def evaluate_model(
     report_path="reports/metrics.txt",
     plot_path="reports/confusion_matrix.png",
 ):
+    """
+    Loads a trained model from disk, makes predictions on the test set, evaluates its performance,
+    and saves the evaluation metrics and confusion matrix to the reports directory.
+
+    Steps performed:
+    - Loads the model using joblib
+    - Generates predictions on the test set
+    - Calculates accuracy and classification report
+    - Saves metrics to a text file (metrics.txt)
+    - Plots and saves a labeled confusion matrix as an image
+
+    Parameters:
+        model_path (str): File path to the trained model (.pkl format)
+        X_test (pd.DataFrame or np.ndarray): Test feature set
+        y_test (pd.Series or np.ndarray): True labels for the test set
+        report_path (str): Path to save the textual evaluation metrics (default: "reports/metrics.txt")
+        plot_path (str): Path to save the confusion matrix image (default: "reports/confusion_matrix.png")
+
+    Returns:
+        None
+    """
     # Load model
     model = joblib.load(model_path)
 

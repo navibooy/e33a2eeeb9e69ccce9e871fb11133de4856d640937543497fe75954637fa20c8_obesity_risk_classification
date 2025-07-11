@@ -19,3 +19,13 @@ dependencies = [
     "shap==0.41.0",
     "xgboost",
 ]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+line-length = 88
+extend-select = ["I"]  # for import sorting (matches isort)
