@@ -1,0 +1,181 @@
+version: '3.8'
+
+services:
+  # ML Application Service
+  ml-app:
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: obesity-classification-app
+    volumes:
+      - ../data:/app/data
+      - ../models:/app/models
+      - ../reports:/app/reports
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - ml-network
+
+  # Airflow Services
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - ml-network
+
+  redis:
+    image: redis:7.2-bookworm
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+    networks:
+      - ml-network
+
+  airflow-webserver:
+    image: apache/airflow:3.0.2
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=''
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION='true'
+      - AIRFLOW__CORE__LOAD_EXAMPLES='false'
+    volumes:
+      - ../deploy/airflow/dags:/opt/airflow/dags
+      - ../deploy/airflow/logs:/opt/airflow/logs
+      - ../deploy/airflow/config:/opt/airflow/config
+      - ../deploy/airflow/plugins:/opt/airflow/plugins
+      - ../src:/opt/airflow/dags/src
+      - ../data:/opt/airflow/data
+      - ../models:/opt/airflow/models
+      - ../reports:/opt/airflow/reports
+    ports:
+      - "8080:8080"
+    command: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - ml-network
+
+  airflow-scheduler:
+    image: apache/airflow:3.0.2
+    container_name: airflow-scheduler
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=''
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION='true'
+      - AIRFLOW__CORE__LOAD_EXAMPLES='false'
+    volumes:
+      - ../deploy/airflow/dags:/opt/airflow/dags
+      - ../deploy/airflow/logs:/opt/airflow/logs
+      - ../deploy/airflow/config:/opt/airflow/config
+      - ../deploy/airflow/plugins:/opt/airflow/plugins
+      - ../src:/opt/airflow/dags/src
+      - ../data:/opt/airflow/data
+      - ../models:/opt/airflow/models
+      - ../reports:/opt/airflow/reports
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - ml-network
+
+  airflow-worker:
+    image: apache/airflow:3.0.2
+    container_name: airflow-worker
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=''
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION='true'
+      - AIRFLOW__CORE__LOAD_EXAMPLES='false'
+    volumes:
+      - ../deploy/airflow/dags:/opt/airflow/dags
+      - ../deploy/airflow/logs:/opt/airflow/logs
+      - ../deploy/airflow/config:/opt/airflow/config
+      - ../deploy/airflow/plugins:/opt/airflow/plugins
+      - ../src:/opt/airflow/dags/src
+      - ../data:/opt/airflow/data
+      - ../models:/opt/airflow/models
+      - ../reports:/opt/airflow/reports
+    command: celery worker
+    restart: always
+    networks:
+      - ml-network
+
+  airflow-init:
+    image: apache/airflow:3.0.2
+    container_name: airflow-init
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=''
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION='true'
+      - AIRFLOW__CORE__LOAD_EXAMPLES='false'
+      - _AIRFLOW_DB_MIGRATE='true'
+      - _AIRFLOW_WWW_USER_CREATE='true'
+      - _AIRFLOW_WWW_USER_USERNAME=airflow
+      - _AIRFLOW_WWW_USER_PASSWORD=airflow
+    volumes:
+      - ../deploy/airflow/dags:/opt/airflow/dags
+      - ../deploy/airflow/logs:/opt/airflow/logs
+      - ../deploy/airflow/config:/opt/airflow/config
+      - ../deploy/airflow/plugins:/opt/airflow/plugins
+    command: version
+    networks:
+      - ml-network
+
+volumes:
+  postgres-db-volume:
+
+networks:
+  ml-network:
+    driver: bridge
