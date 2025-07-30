@@ -14,18 +14,6 @@ dependencies = [
     "xgboost>=3.0.2",
 ]
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
-[tool.ruff]
-line-length = 88
-
-[tool.ruff.lint]
-extend-select = ["I"]
-
 [dependency-groups]
 dev = [
     "pytest==8.4.1"
