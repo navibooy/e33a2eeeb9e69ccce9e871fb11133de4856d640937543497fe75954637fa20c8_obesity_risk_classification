@@ -1,5 +1,4 @@
 import os
-
 import joblib
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
@@ -9,66 +8,57 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-
 def evaluate_model(
     model_path,
-    X_test,
-    y_test,
+    X_test_path,
+    y_test_path,
     report_path="reports/metrics.txt",
     plot_path="reports/confusion_matrix.png",
 ):
     """
-    Loads a trained model from disk, makes predictions on the test set, evaluates its performance,
-    and saves the evaluation metrics and confusion matrix to the reports directory.
-
-    Steps performed:
-    - Loads the model using joblib
-    - Generates predictions on the test set
-    - Calculates accuracy and classification report
-    - Saves metrics to a text file (metrics.txt)
-    - Plots and saves a labeled confusion matrix as an image
+    Loads a trained model and test data from disk, evaluates its performance,
+    and saves the metrics and confusion matrix to disk.
 
     Parameters:
-        model_path (str): File path to the trained model (.pkl format)
-        X_test (pd.DataFrame or np.ndarray): Test feature set
-        y_test (pd.Series or np.ndarray): True labels for the test set
-        report_path (str): Path to save the textual evaluation metrics (default: "reports/metrics.txt")
-        plot_path (str): Path to save the confusion matrix image (default: "reports/confusion_matrix.png")
+        model_path (str): Path to trained model (.pkl)
+        X_test_path (str): Path to X_test.pkl
+        y_test_path (str): Path to y_test.pkl
+        report_path (str): Path to save classification report (default: "reports/metrics.txt")
+        plot_path (str): Path to save confusion matrix plot (default: "reports/confusion_matrix.png")
 
     Returns:
         None
     """
-    # Load model
-    model = joblib.load(model_path)
 
-    # Predict
+    model = joblib.load(model_path)
+    X_test = joblib.load(X_test_path)
+    y_test = joblib.load(y_test_path)
+
     y_pred = model.predict(X_test)
 
-    # Calculate metrics
     acc = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred)
 
     class_labels_num = [0, 1, 2, 3]
+    class_labels = ["Underweight", "Normal_weight", "Overweight", "Obesity"]
     cm = confusion_matrix(y_test, y_pred, labels=class_labels_num)
 
-    # Save text report
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w") as f:
         f.write(f"Accuracy: {acc:.4f}\n\n")
         f.write("Classification Report:\n")
         f.write(report)
 
-    print(f"✅ Metrics saved to {report_path}")
+    print(f"Metrics saved to: {report_path}")
 
-    # Plot and save confusion matrix
-    class_labels = ["Underweight", "Normal_weight", "Overweight", "Obesity"]
+    os.makedirs(os.path.dirname(plot_path), exist_ok=True)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
     disp.plot(cmap="Blues", xticks_rotation="vertical", values_format="d")
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.title("Confusion Matrix")
     plt.tight_layout()
-
     plt.savefig(plot_path)
-    print(f"📊 Confusion matrix saved to {plot_path}")
     plt.close()
+
+    print(f"Confusion matrix saved to: {plot_path}")

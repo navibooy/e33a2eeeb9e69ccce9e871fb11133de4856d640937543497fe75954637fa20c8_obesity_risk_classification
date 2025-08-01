@@ -1,9 +1,7 @@
 import os
-
 import pandas as pd
 
-
-def read_and_preprocess_data(path):
+def read_and_preprocess_data(input_path, output_path=None):
     """
     Loads and preprocesses the obesity dataset.
 
@@ -12,15 +10,16 @@ def read_and_preprocess_data(path):
     - Renaming columns to more intuitive names
     - Calculating BMI and body fat percentage
     - Mapping obesity type into 4 broad categories
-    - Saving the cleaned dataset to 'data/preprocessed/'
+    - Optionally saving the cleaned dataset to output_path
 
     Parameters:
-        path (str): Path to the raw CSV file
+        input_path (str): Path to the raw CSV file
+        output_path (str, optional): If provided, the preprocessed CSV is saved to this path
 
     Returns:
         pd.DataFrame: Preprocessed DataFrame ready for feature engineering
     """
-    data_df = pd.read_csv(path)
+    data_df = pd.read_csv(input_path)
     data_df[["FAF", "TUE"]] = data_df[["FAF", "TUE"]].apply(
         pd.to_numeric, errors="coerce"
     )
@@ -42,7 +41,6 @@ def read_and_preprocess_data(path):
     }
     data_df.rename(columns=new_column_names, inplace=True)
 
-    # Add BMI and BodyFat Percentage column based on specific features
     data_df["BMI"] = data_df["Weight"] / (data_df["Height"] ** 2)
     data_df["BodyFat_Percentage"] = data_df.apply(
         lambda row: 1.2 * row["BMI"] + 0.23 * row["Age"] - 16.2
@@ -51,7 +49,6 @@ def read_and_preprocess_data(path):
         axis=1,
     )
 
-    # Define the mapping for the obesity_type column
     obesity_type_mapping = {
         "Insufficient_Weight": "Underweight",
         "Normal_Weight": "Normal_weight",
@@ -64,12 +61,10 @@ def read_and_preprocess_data(path):
 
     data_df["obesity_type"] = data_df["obesity_type"].str.strip()
     data_df["obesity_type"] = data_df["obesity_type"].replace(obesity_type_mapping)
-    preprocessed_data = data_df
 
-    # Save to preprocessed directory
-    output_path = "data/preprocessed/obesity_data_preprocessed.csv"
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    preprocessed_data.to_csv(output_path, index=False)
-    print(f"✅ Preprocessed data successfully saved to {output_path}")
+    if output_path:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        data_df.to_csv(output_path, index=False)
+        print(f"Preprocessed data saved to: {output_path}")
 
-    return preprocessed_data
+    return data_df

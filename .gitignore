@@ -36,3 +36,4 @@ models/
 *.lock
 
 /tests/fixtures/sample_obesity_data.csv
+data/processed/obesity_clean.csv

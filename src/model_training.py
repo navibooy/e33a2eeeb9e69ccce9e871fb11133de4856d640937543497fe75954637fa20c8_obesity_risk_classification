@@ -1,6 +1,5 @@
 import os
 import time
-
 import joblib
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -49,26 +48,24 @@ encoder = ColumnTransformer(
 )
 
 
-def train_model(X_train, y_train, save_path="models/model.pkl", random_seed=42):
+def train_model(X_train_path, y_train_path, model_path="models/model.pkl", random_seed=42):
     """
-    Trains an XGBoost classifier within a scikit-learn pipeline that includes
-    column encoding using Ordinal and OneHot encoders. Uses the best hyperparameters
-    obtained from cross-validation and saves the trained pipeline to disk.
-
-    The pipeline includes:
-    - ColumnTransformer for encoding numeric, ordinal, binary, and categorical features
-    - XGBoost classifier with tuned hyperparameters
+    Trains an XGBoost classifier using a pipeline with feature encoders and saves it.
 
     Parameters:
-        X_train (pd.DataFrame): Training features
-        y_train (pd.Series): Training labels
-        save_path (str): Path where the trained model will be saved (default: "models/model.pkl")
-        random_seed (int): Random seed for model reproducibility (default: 42)
+        X_train_path (str): Path to X_train.pkl
+        y_train_path (str): Path to y_train.pkl
+        model_path (str): Path where the model will be saved
+        random_seed (int): Seed for reproducibility
 
     Returns:
-        sklearn.pipeline.Pipeline: Trained pipeline object
+        sklearn.pipeline.Pipeline: Trained model pipeline
     """
-    # Use best parameters from RandomizedSearch
+    # Load data
+    X_train = joblib.load(X_train_path)
+    y_train = joblib.load(y_train_path)
+
+    # Model setup
     xgb = XGBClassifier(
         booster="gbtree",
         random_state=random_seed,
@@ -81,17 +78,16 @@ def train_model(X_train, y_train, save_path="models/model.pkl", random_seed=42):
 
     model_pipeline = Pipeline([("encoder", encoder), ("xgb", xgb)])
 
-    # Train model
-    start_time = time.time()
+    # Train
+    start = time.time()
     model_pipeline.fit(X_train, y_train)
-    end_time = time.time()
-    runtime = end_time - start_time
+    end = time.time()
 
-    # Save model
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    joblib.dump(model_pipeline, save_path)
+    # Save
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    joblib.dump(model_pipeline, model_path)
 
-    print(f"✅ Model trained and saved to {save_path}")
-    print(f"⏱️ Training time: {runtime:.2f} seconds")
+    print(f"Model trained and saved to: {model_path}")
+    print(f"Training time: {end - start:.2f} seconds")
 
     return model_pipeline
