@@ -7,7 +7,7 @@ from src.feature_engineering import split_and_engineer_features
 from src.model_training import train_model
 from src.evaluation import evaluate_model
 
-RAW_PATH = "data/raw/obesity.csv"
+RAW_PATH = "data/raw/obesity_data.csv"
 PROCESSED_PATH = "data/processed/obesity_clean.csv"
 SPLIT_DIR = "data/splits/"
 MODEL_PATH = "models/model.pkl"
