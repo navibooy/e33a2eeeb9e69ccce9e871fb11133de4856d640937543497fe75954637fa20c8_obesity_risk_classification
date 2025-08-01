@@ -13,13 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv (modern Python dependency manager)
-RUN pip install --no-cache-dir "uv>=0.1.24"
-
-# Copy only dependency manifest
-COPY pyproject.toml .
-
-# Install dependencies into system environment
-RUN uv pip install -r pyproject.toml --system
-
 USER airflow
+
+# Install uv (modern dependency manager)
+RUN pip install --no-cache-dir "uv>=0.1.24"
+COPY pyproject.toml ./
+RUN uv pip install -r pyproject.toml
+
+COPY src/ /opt/airflow/src/
+ENV PYTHONPATH="${PYTHONPATH}:/opt/airflow/src"
