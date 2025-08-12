@@ -81,12 +81,12 @@ Open your browser and visit `http://localhost:8080/dags` to access Airflow web i
 - Username: `airflow`
 - Password: `airflow`
 
-In the UI, search for the DAG named `obesity_classification_dag` and trigger it manually. You can view logs, task status, and execution timelines here.
+In the UI, search for the DAG named `ml_pipeline_dag` and trigger it manually. You can view logs, task status, and execution timelines here.
 
 #### Step 5: Test the Pipeline using command line
 You can also test individual tasks from the CLI. For example, to test the `preprocess_data` task:
 ```bash
-docker compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test obesity_classification_dag preprocess_data 2025-08-01
+docker compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test ml_pipeline_dag preprocess_data 2025-08-01
 ```
 Replace the date with your target execution date in `YYYY-MM-DD` format.
 
@@ -178,7 +178,7 @@ This modular Docker strategy enables:
 - Clear separation between orchestration logic and ML model logic
 
 # Airflow DAG
-The DAG (`obesity_classification_dag`) is defined in `deploy/airflow/ml_pipeline_dag.py` and manages the ML workflow as a sequence of Python-based tasks using `PythonOperator`.
+The DAG (`ml_pipeline_dag`) is defined in `deploy/airflow/ml_pipeline_dag.py` and manages the ML workflow as a sequence of Python-based tasks using `PythonOperator`.
 
 ## DAG Structure:
 1. `preprocess_data` – Cleans and prepares the raw CSV data.

@@ -21,7 +21,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id="obesity_classification_dag",
+    dag_id="ml_pipeline_dag",
     default_args=default_args,
     description="Obesity classification ML pipeline DAG",
     schedule=None,
