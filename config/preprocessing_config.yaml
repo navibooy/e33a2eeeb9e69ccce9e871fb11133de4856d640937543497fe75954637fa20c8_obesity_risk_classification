@@ -1,0 +1,202 @@
+---
+# config/preprocessing_config.yaml
+# Configuration file for data preprocessing pipeline
+# =============================================================================
+# DATASET CONFIGURATION
+# =============================================================================
+dataset:
+  paths:
+    raw_data: "data/raw/train.csv"
+    processed_train: "data/splits/train.csv"
+    processed_test: "data/splits/test.csv"
+    drifted_train: "data/splits/drifted_train.csv"
+    drifted_test: "data/splits/drifted_test.csv"
+    data_directory: "data/"
+
+  target:
+    target_column: "obesity_type"
+    id_columns: ["id", "Id", "ID"]
+
+# =============================================================================
+# FEATURE CONFIGURATION
+# =============================================================================
+features:
+  numerical:
+    - "Age"
+    - "Height"
+    - "Weight"
+    - "veg_consumption"      # FCVC - renamed
+    - "main_meals_daily"     # NCP - renamed
+    - "water_daily"          # CH2O - renamed
+    - "physical_weekly"      # FAF - renamed
+    - "tech_usage_daily"     # TUE - renamed
+    - "BMI"                  # Calculated feature
+    - "BodyFat_Percentage"   # Calculated feature
+
+  categorical:
+    - "Gender"
+    - "family_history_with_overweight"
+    - "highcal_consumption"    # FAVC - renamed
+    - "snack_consumption"      # CAEC - renamed
+    - "SMOKE"
+    - "track_cal_intake"       # SCC - renamed
+    - "alcohol_consumption"    # CALC - renamed
+    - "transport_mode"         # MTRANS - renamed
+
+  column_mapping:
+    FAVC: "highcal_consumption"
+    FCVC: "veg_consumption"
+    NCP: "main_meals_daily"
+    CAEC: "snack_consumption"
+    CH2O: "water_daily"
+    SCC: "track_cal_intake"
+    FAF: "physical_weekly"
+    TUE: "tech_usage_daily"
+    CALC: "alcohol_consumption"
+    MTRANS: "transport_mode"
+    NObeyesdad: "obesity_type"
+
+# =============================================================================
+# DATA CLEANING CONFIGURATION
+# =============================================================================
+data_cleaning:
+  missing_values:
+    numerical_fill_strategy:
+      FAF: 0  # Physical activity frequency
+      TUE: 0  # Technology use
+
+    categorical_fill_strategy: {}
+
+    columns_to_convert_numeric: ["FAF", "TUE"]
+
+  obesity_type_mapping:
+    "Insufficient_Weight": "Underweight"
+    "Normal_Weight": "Normal_weight"
+    "Overweight_Level_I": "Overweight"
+    "Overweight_Level_II": "Overweight"
+    "Obesity_Type_I": "Obesity"
+    "Obesity_Type_II": "Obesity"
+    "Obesity_Type_III": "Obesity"
+
+# =============================================================================
+# FEATURE ENGINEERING CONFIGURATION
+# =============================================================================
+feature_engineering:
+  bmi:
+    height_column: "Height"
+    weight_column: "Weight"
+    new_column_name: "BMI"
+
+  body_fat:
+    new_column_name: "BodyFat_Percentage"
+    gender_column: "Gender"
+    age_column: "Age"
+    bmi_column: "BMI"
+    formulas:
+      male:
+        bmi_coef: 1.2
+        age_coef: 0.23
+        constant: -16.2
+      female:
+        bmi_coef: 1.2
+        age_coef: 0.23
+        constant: -5.4
+
+  pipeline:
+    columns_to_drop: ["BMI", "Height", "Weight", "BodyFat_Percentage"]
+
+    label_mapping:
+      "Underweight": 0
+      "Normal_weight": 1
+      "Overweight": 2
+      "Obesity": 3
+
+    resampling:
+      enabled: true
+      method: "RandomOverSampler"  # or "SMOTE", "ADASYN"
+      random_state: 42
+
+    output:
+      save_splits: true
+      output_format: "csv"  # "pkl", "csv", "both"
+      output_dir: "data/splits"
+
+# =============================================================================
+# TRAIN/TEST SPLIT CONFIGURATION
+# =============================================================================
+train_test_split:
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# =============================================================================
+# DRIFT GENERATION CONFIGURATION
+# =============================================================================
+drift:
+  numerical:
+    train:
+      method: "multiply"        # 'multiply' or 'noise'
+      multiply_factor: 1.2
+      noise_std_multiplier: 0.1
+      random_state: 42
+    test:
+      method: "noise"           # 'multiply' or 'noise'
+      multiply_factor: 1.2
+      noise_std_multiplier: 0.1
+      random_state: 43
+
+  categorical:
+    train:
+      flip_percentage: 0.125    # 12.5%
+      random_state: 42
+    test:
+      flip_percentage: 0.15     # 15%
+      random_state: 43
+
+  exclude_from_drift: []
+
+# =============================================================================
+# VALIDATION CONFIGURATION
+# =============================================================================
+validation:
+  expected_dtypes:
+    numerical_type: "float64"
+    categorical_type: "object"
+    target_type: "object"
+
+  quality_checks:
+    max_missing_percentage: 0.05  # 5%
+    min_rows: 100
+    min_features: 5
+
+  feature_ranges:
+    Age: {min: 0, max: 120}
+    Height: {min: 0.5, max: 3.0}  # meters
+    Weight: {min: 10, max: 500}   # kg
+    BMI: {min: 10, max: 100}
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+logging:
+  log_level: "INFO"
+  log_drift_details: true
+  log_feature_statistics: true
+  log_file_operations: true
+
+# =============================================================================
+# ENVIRONMENT-SPECIFIC OVERRIDES
+# =============================================================================
+environments:
+  development:
+    train_test_split:
+      test_size: 0.3
+
+  production:
+    train_test_split:
+      test_size: 0.2
+
+  testing:
+    dataset:
+      paths:
+        raw_data: "data/test_sample.csv"
