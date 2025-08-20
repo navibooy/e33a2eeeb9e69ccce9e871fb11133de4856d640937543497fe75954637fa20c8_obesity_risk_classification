@@ -1,0 +1,1 @@
+{"original_train_shape": [16606, 18], "original_test_shape": [4152, 18], "drifted_train_shape": [16606, 18], "drifted_test_shape": [4152, 18], "preprocessing_successful": true}

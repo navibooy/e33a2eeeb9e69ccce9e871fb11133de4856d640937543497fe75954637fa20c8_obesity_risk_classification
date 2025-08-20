@@ -1,0 +1,10 @@
+{
+  "model_retrained": true,
+  "retrain_reason": "data_drift_detected",
+  "new_mlflow_run_id": "4b9ac6a9c6564f1ea08a946c088b431a",
+  "retrain_timestamp": "2025-08-20T15:54:39.908323",
+  "retrained_data_shape": [
+    32652,
+    14
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "original_train_shape": [
+    16606,
+    18
+  ],
+  "original_test_shape": [
+    4152,
+    18
+  ],
+  "drifted_train_shape": [
+    16606,
+    18
+  ],
+  "drifted_test_shape": [
+    4152,
+    18
+  ],
+  "preprocessing_successful": true,
+  "processing_time_seconds": 4.421172,
+  "timestamp": "2025-08-21T00:54:05.910897",
+  "data_quality_checks": {
+    "original_null_count": "0",
+    "drifted_null_count": "0"
+  }
+}

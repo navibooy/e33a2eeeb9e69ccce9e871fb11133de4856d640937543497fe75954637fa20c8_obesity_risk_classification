@@ -1,0 +1,24 @@
+{
+  "original_data": {
+    "accuracy": 0.773121387283237,
+    "f1_score": 0.776574236379515,
+    "n_samples": 4152,
+    "n_features": 14
+  },
+  "drifted_data": {
+    "accuracy": 0.5166184971098265,
+    "f1_score": 0.49399462300289076,
+    "n_samples": 4152,
+    "n_features": 14
+  },
+  "performance_degradation": {
+    "accuracy_drop": 0.25650289017341044,
+    "f1_score_drop": 0.2825796133766242
+  },
+  "model_registered": false,
+  "mlflow_run_id": "25cfed2964944021bd5cdcdf01fccbd0",
+  "evaluation_method": "optimized_evaluation",
+  "evaluation_time_seconds": 0.670922,
+  "timestamp": "2025-08-21T00:54:34.636171",
+  "threshold_met": false
+}

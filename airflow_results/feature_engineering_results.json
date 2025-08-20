@@ -1,0 +1,22 @@
+{
+  "original_engineered_train_shape": [
+    32652,
+    14
+  ],
+  "original_engineered_test_shape": [
+    4152,
+    14
+  ],
+  "drifted_engineered_train_shape": [
+    32652,
+    14
+  ],
+  "drifted_engineered_test_shape": [
+    4152,
+    14
+  ],
+  "feature_engineering_successful": true,
+  "processing_time_seconds": 4.493735,
+  "timestamp": "2025-08-21T00:54:11.233682",
+  "feature_count": 14
+}

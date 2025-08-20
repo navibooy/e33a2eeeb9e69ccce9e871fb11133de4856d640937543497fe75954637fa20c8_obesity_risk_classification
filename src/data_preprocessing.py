@@ -115,7 +115,7 @@ def generate_drift_for_categorical_features(data, feature_cols, flip_percentage=
 
 def preprocess_data(train_path=None):
     """
-    Main preprocessing function that generates drifted datasets as required by HW3.
+    Main preprocessing function that generates drifted datasets.
 
     Returns:
         tuple: (X_train, X_test, y_train, y_test, X_train_drifted,
@@ -198,10 +198,8 @@ def preprocess_data(train_path=None):
 
     y_test_drifted = y_test.copy()
 
-    # Save datasets as required
     paths = config.get_paths()
 
-    # Save drifted datasets as required by HW3
     train_drifted_df = X_train_drifted.copy()
     train_drifted_df[target_col] = y_train_drifted
     train_drifted_df.to_csv(paths['drifted_train'], index=False)

@@ -1,0 +1,31 @@
+{
+  "model_trained": true,
+  "model_type": "XGBoost Pipeline",
+  "training_data_shape": [
+    32652,
+    14
+  ],
+  "engineered_data_available": true,
+  "training_time_seconds": 11.534366,
+  "timestamp": "2025-08-21T00:54:23.133092",
+  "original_shapes": {
+    "train": [
+      32652,
+      14
+    ],
+    "test": [
+      4152,
+      14
+    ]
+  },
+  "drifted_shapes": {
+    "train": [
+      32652,
+      14
+    ],
+    "test": [
+      4152,
+      14
+    ]
+  }
+}

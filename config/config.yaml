@@ -1,6 +1,7 @@
 ---
 # config/preprocessing_config.yaml
 # Configuration file for data preprocessing pipeline
+
 # =============================================================================
 # DATASET CONFIGURATION
 # =============================================================================
@@ -82,6 +83,7 @@ data_cleaning:
 # FEATURE ENGINEERING CONFIGURATION
 # =============================================================================
 feature_engineering:
+  # BMI and body fat calculation (done in preprocessing)
   bmi:
     height_column: "Height"
     weight_column: "Weight"
@@ -102,20 +104,25 @@ feature_engineering:
         age_coef: 0.23
         constant: -5.4
 
+  # Feature engineering pipeline settings
   pipeline:
+    # Columns to drop before ML training
     columns_to_drop: ["BMI", "Height", "Weight", "BodyFat_Percentage"]
 
+    # Label encoding for target variable
     label_mapping:
       "Underweight": 0
       "Normal_weight": 1
       "Overweight": 2
       "Obesity": 3
 
+    # Resampling configuration
     resampling:
       enabled: true
       method: "RandomOverSampler"  # or "SMOTE", "ADASYN"
       random_state: 42
 
+    # Output configuration
     output:
       save_splits: true
       output_format: "csv"  # "pkl", "csv", "both"
@@ -156,6 +163,73 @@ drift:
   exclude_from_drift: []
 
 # =============================================================================
+# MODEL TRAINING CONFIGURATION
+# =============================================================================
+model_training:
+  # MLFlow configuration
+  mlflow:
+    tracking_uri: "http://localhost:5000"
+    experiment_name: "obesity_risk_classification"
+    backend_store_uri: "file:./mlflow/runs"        # HW3 compliant path
+    default_artifact_root: "./mlflow/artifacts"
+
+  # Model hyperparameters (exactly 3 as required by HW3)
+  hyperparameters:
+    n_estimators: 100
+    max_depth: 7
+    learning_rate: 0.3
+
+  # Additional XGBoost parameters (not logged to MLFlow)
+  xgboost_params:
+    booster: "gbtree"
+    subsample: 0.75
+    reg_lambda: 0.1
+    reg_alpha: 0
+    random_state: 42
+
+  # Feature engineering configuration
+  features:
+    numerical_cols:
+      - "Age"
+      - "veg_consumption"
+      - "main_meals_daily"
+      - "water_daily"
+      - "physical_weekly"
+      - "tech_usage_daily"
+
+    ordinal_cols:
+      - "snack_consumption"
+      - "alcohol_consumption"
+
+    binary_cols:
+      - "Gender"
+      - "family_history_with_overweight"
+      - "highcal_consumption"
+      - "SMOKE"
+      - "track_cal_intake"
+
+    categorical_cols:
+      - "transport_mode"
+
+    # Ordinal encoding categories
+    ordinal_categories:
+      snack_consumption: ["no", "Sometimes", "Frequently", "Always"]
+      alcohol_consumption: ["no", "Sometimes", "Frequently"]
+
+  # Model artifacts and saving
+  artifacts:
+    model_save_path: "models/model.pkl"
+    mlflow_artifacts_dir: "mlflow/artifacts"
+    feature_names_file: "feature_names.txt"
+    model_file: "model.pkl"
+
+  # Training configuration
+  training:
+    random_seed: 42
+    save_model: true
+    log_training_time: true
+
+# =============================================================================
 # VALIDATION CONFIGURATION
 # =============================================================================
 validation:
@@ -191,12 +265,27 @@ environments:
   development:
     train_test_split:
       test_size: 0.3
+    model_training:
+      hyperparameters:
+        n_estimators: 50  # Faster training for development
+        max_depth: 5
+        learning_rate: 0.3
 
   production:
     train_test_split:
       test_size: 0.2
+    model_training:
+      hyperparameters:
+        n_estimators: 100
+        max_depth: 7
+        learning_rate: 0.3
 
   testing:
     dataset:
       paths:
         raw_data: "data/test_sample.csv"
+    model_training:
+      hyperparameters:
+        n_estimators: 10  # Very fast for testing
+        max_depth: 3
+        learning_rate: 0.5

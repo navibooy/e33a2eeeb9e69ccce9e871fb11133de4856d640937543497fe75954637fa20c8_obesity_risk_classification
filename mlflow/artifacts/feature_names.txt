@@ -1,0 +1,14 @@
+Gender
+Age
+family_history_with_overweight
+highcal_consumption
+veg_consumption
+main_meals_daily
+snack_consumption
+SMOKE
+water_daily
+track_cal_intake
+physical_weekly
+tech_usage_daily
+alcohol_consumption
+transport_mode

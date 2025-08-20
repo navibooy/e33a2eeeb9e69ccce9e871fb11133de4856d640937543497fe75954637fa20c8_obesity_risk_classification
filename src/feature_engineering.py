@@ -80,9 +80,9 @@ def main():
         X_train_drifted, X_test_drifted, y_train_drifted, y_test_drifted
     )
 
-    print("Feature engineering completed:")
-    print(f"Original - Train: {X_train_eng.shape}, Test: {X_test_eng.shape}")
-    print(f"Drifted  - Train: {X_train_drift_eng.shape}, Test: {X_test_drift_eng.shape}")
+    # print("Feature engineering completed!")
+    # print(f"Original - Train: {X_train_eng.shape}, Test: {X_test_eng.shape}")
+    # print(f"Drifted  - Train: {X_train_drift_eng.shape}, Test: {X_test_drift_eng.shape}")
 
     return {
         'original': (X_train_eng, X_test_eng, y_train_eng, y_test_eng),

@@ -13,10 +13,11 @@ dependencies = [
     "scikit-learn==1.6.1",
     "xgboost==3.0.2",
     "mlflow==3.1.4",
-    "evidently==0.7.11",
     "psycopg2-binary==2.9.10",
     "kaggle>=1.7.4.5",
     "pyyaml>=6.0.2",
+    "evidently==0.7.11",
+    "flask-session==0.5.0",
 ]
 
 [dependency-groups]

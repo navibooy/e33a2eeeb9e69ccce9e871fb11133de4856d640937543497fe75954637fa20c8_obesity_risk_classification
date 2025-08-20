@@ -26,8 +26,11 @@ x-airflow-common:
     - ../../data:/opt/airflow/data
     - ../../models:/opt/airflow/models
     - ../../reports:/opt/airflow/reports
-    - ../../mlflow:/opt/airflow/mlflow  # Added for MLFlow integration
-    - ../../src:/opt/airflow/src        # Added for source code access
+    - ../../mlflow:/opt/airflow/mlflow
+    - ../../src:/opt/airflow/src
+    - ../../config:/opt/airflow/config
+    - ../../mlflow/artifacts:/mlflow/artifacts
+    - ../../airflow_results:/opt/airflow/airflow_results
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -79,6 +82,8 @@ services:
     ports:
       - "5000:5000"
     environment:
+      MLFLOW_TRACKING_URI: 'http://mlflow:5000'
+      MLFLOW_EXPERIMENT_NAME: 'obesity_risk_classification'
       MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:mlflow@mlflow-postgres:5432/mlflow
       MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
     volumes:

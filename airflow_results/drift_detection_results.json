@@ -1,0 +1,13 @@
+{
+  "drift_detected": true,
+  "feature_drifts": {
+    "Gender": 0.2904955293209782,
+    "Age": 0.9999999997278054,
+    "Height": 0.9782382657796835
+  },
+  "overall_drift_score": 0.7562445982761558,
+  "detection_time_seconds": 2.660024,
+  "timestamp": "2025-08-21T00:54:37.438895",
+  "configured_threshold": 0.5,
+  "threshold_exceeded": true
+}
