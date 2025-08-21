@@ -31,8 +31,6 @@ if experiment_name:
     except Exception as e:
         print(f"Could not set MLflow experiment: {e}")
 
-print(f"MLflow URI set to: {tracking_uri}")
-
 def evaluate_model_with_mlflow(model, X_test, y_test, save_results=True, run_context=None):
     """
     Evaluate model and log exactly 2 metrics to MLFlow.

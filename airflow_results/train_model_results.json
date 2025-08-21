@@ -6,8 +6,17 @@
     14
   ],
   "engineered_data_available": true,
-  "training_time_seconds": 11.534366,
-  "timestamp": "2025-08-21T00:54:23.133092",
+  "training_time_seconds": 62.582507,
+  "timestamp": "2025-08-21T12:20:00.726539",
+  "mlflow_config_used": {
+    "tracking_uri": "http://mlflow:5000",
+    "experiment_name": "obesity_risk_classification",
+    "backend_store_uri": "file:./mlflow/runs",
+    "default_artifact_root": "./mlflow/artifacts",
+    "is_server_mode": true,
+    "environment_detected": "docker",
+    "auto_detected": false
+  },
   "original_shapes": {
     "train": [
       32652,

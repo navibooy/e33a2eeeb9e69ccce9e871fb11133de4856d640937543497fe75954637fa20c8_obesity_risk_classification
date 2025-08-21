@@ -27,13 +27,6 @@ training_config = config.get('model_training.training')
 tracking_uri = os.getenv("MLFLOW_TRACKING_URI") or mlflow_config['tracking_uri']
 mlflow.set_tracking_uri(tracking_uri)
 
-print("="*60)
-print("XGBOOST MODEL TRAINING WITH MLFLOW (CONFIG-DRIVEN)")
-print("="*60)
-print(f"MLFlow URI: {tracking_uri}")
-print(f"Hyperparameters: {hyperparams}")
-print(f"Model save path: {artifacts_config['model_save_path']}")
-
 # Feature groups from configuration
 numerical_cols = feature_config['numerical_cols']
 ordinal_cols = feature_config['ordinal_cols']
@@ -155,11 +148,6 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
     max_depth = hyperparams['max_depth']
     learning_rate = hyperparams['learning_rate']
 
-    print(f"About to log hyperparameters to run {active_run.info.run_id}:")
-    print(f"n_estimators: {n_estimators} (type: {type(n_estimators)})")
-    print(f"max_depth: {max_depth} (type: {type(max_depth)})")
-    print(f"learning_rate: {learning_rate} (type: {type(learning_rate)})")
-
     try:
         # Convert to basic Python types to avoid MLflow serialization issues
         n_estimators_val = int(n_estimators) if hasattr(n_estimators, '__int__') else n_estimators
@@ -168,29 +156,14 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
 
         print("Logging parameters...")
         mlflow.log_param("n_estimators", n_estimators_val)
-        print(f"Successfully logged n_estimators: {n_estimators_val}")
-
         mlflow.log_param("max_depth", max_depth_val)
-        print(f"Successfully logged max_depth: {max_depth_val}")
-
         mlflow.log_param("learning_rate", learning_rate_val)
-        print(f"Successfully logged learning_rate: {learning_rate_val}")
 
-        # ✅ Immediate verification that parameters were saved
+        # Immediate verification that parameters were saved
         print("Verifying parameters were saved to MLflow...")
         current_run = mlflow.get_run(active_run.info.run_id)
         logged_params = current_run.data.params
         print(f"All parameters currently in MLflow: {logged_params}")
-
-        # Check specifically for our required parameters
-        required_params = ["n_estimators", "max_depth", "learning_rate"]
-        missing_params = [p for p in required_params if p not in logged_params]
-
-        if missing_params:
-            print(f"WARNING: Missing parameters after logging: {missing_params}")
-            print("This indicates an MLflow logging issue!")
-        else:
-            print(f"SUCCESS: All {len(required_params)} parameters confirmed in MLflow!")
 
     except Exception as param_error:
         print(f"CRITICAL ERROR logging parameters: {param_error}")
@@ -198,10 +171,8 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
         print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
         import traceback
         traceback.print_exc()
-        # Continue with training even if parameter logging fails
         print("Continuing with model training despite parameter logging failure...")
 
-    # Create XGBoost classifier
     print("Creating XGBoost classifier with parameters:")
     print(f"n_estimators: {n_estimators}")
     print(f"max_depth: {max_depth}")
@@ -221,11 +192,6 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
     # Create model pipeline
     model_pipeline = Pipeline([("encoder", encoder), ("xgb", xgb)])
 
-    print("Model pipeline created successfully")
-    print(f"Pipeline steps: {[step[0] for step in model_pipeline.steps]}")
-    print(f"Training data shape: {X_train.shape}")
-
-    print("Training XGBoost model with MLFlow tracking...")
     start = time.time()
     model_pipeline.fit(X_train, y_train)
     end = time.time()
@@ -233,15 +199,12 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
     training_time = end - start
     print(f"Training completed in {training_time:.2f} seconds")
 
-    # Save model artifacts to mlflow/artifacts/
-    print("Saving model artifacts...")
     artifacts_dir = artifacts_config['mlflow_artifacts_dir']
     os.makedirs(artifacts_dir, exist_ok=True)
     print(f"Artifacts directory: {artifacts_dir}")
 
     model_artifact_path = os.path.join(artifacts_dir, artifacts_config['model_file'])
     joblib.dump(model_pipeline, model_artifact_path)
-    print(f"Model saved to: {model_artifact_path}")
 
     feature_names_path = os.path.join(artifacts_dir, artifacts_config['feature_names_file'])
     with open(feature_names_path, 'w') as f:
@@ -251,7 +214,6 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
         else:
             for i in range(X_train.shape[1]):
                 f.write(f"feature_{i}\n")
-    print(f"Feature names saved to: {feature_names_path}")
 
     artifacts = {
         "model": model_artifact_path,
@@ -259,7 +221,6 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
     }
 
     try:
-        print("Logging model to MLflow with custom PyFunc wrapper...")
         mlflow.pyfunc.log_model(
             artifact_path="model",
             python_model=CustomMLModel(),
@@ -293,19 +254,6 @@ def _train_model_core(X_train=None, y_train=None, X_train_path=None, y_train_pat
         final_run_id = mlflow.active_run().info.run_id
         print("Model training completed successfully!")
         print(f"MLflow run ID: {final_run_id}")
-
-        # Final parameter check
-        try:
-            final_run = mlflow.get_run(final_run_id)
-            final_params = final_run.data.params
-            final_metrics = final_run.data.metrics
-            print("Final MLflow state:")
-            print(f"Parameters ({len(final_params)}): {final_params}")
-            print(f"Metrics ({len(final_metrics)}): {list(final_metrics.keys())}")
-        except Exception as final_check_error:
-            print(f"Could not perform final MLflow check: {final_check_error}")
-    else:
-        print("Warning: No active MLflow run at completion")
 
     return model_pipeline
 

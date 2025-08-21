@@ -1,4 +1,4 @@
-# config/config_loader.py
+# config/config_loader.py - IMPROVED VERSION
 """
 Configuration loader for YAML-based configuration.
 Provides a clean interface to access configuration values.
@@ -6,8 +6,11 @@ Provides a clean interface to access configuration values.
 
 import os
 import yaml
-import socket  # Added for Docker detection
+import socket
 from typing import Dict, Any, List
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ConfigLoader:
     """
@@ -57,35 +60,155 @@ class ConfigLoader:
             else:
                 base_dict[key] = value
 
-    # def _detect_docker_environment(self) -> bool:
-    #     """Detect if running in Docker/Airflow environment."""
-    #     return (
-    #         os.path.exists('/.dockerenv') or           # Docker container indicator
-    #         os.environ.get('AIRFLOW_HOME') or          # Airflow environment
-    #         os.path.exists('/opt/airflow') or          # Airflow working directory
-    #         self._can_resolve_mlflow_service()         # Can resolve mlflow hostname
-    #     )
-
-    # def _can_resolve_mlflow_service(self) -> bool:
-    #     """Check if 'mlflow' hostname can be resolved (Docker environment)."""
-    #     try:
-    #         socket.gethostbyname('mlflow')
-    #         return True
-    #     except socket.gaierror:
-    #         return False
-
     def _is_docker_compose_running(self) -> bool:
-        """Simple check if Docker Compose is running."""
+        """
+        ✅ IMPROVED: Quick check if Docker Compose MLflow is running with better timeout handling
+        """
         try:
-            # Check if MLflow service is accessible via Docker service name
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)  # 2 second timeout
+            sock.settimeout(0.5)  # Very short timeout to prevent delays
             result = sock.connect_ex(('mlflow', 5000))
             sock.close()
-            return result == 0
-        except Exception:
+
+            is_running = result == 0
+            if is_running:
+                logger.info("✓ MLflow Docker service detected at mlflow:5000")
+            else:
+                logger.info("MLflow Docker service not available at mlflow:5000")
+            return is_running
+
+        except socket.gaierror:
+            # hostname 'mlflow' cannot be resolved - not in Docker environment
+            logger.info("Not in Docker Compose environment (mlflow hostname not resolvable)")
+            return False
+        except Exception as e:
+            logger.info(f"Docker Compose check failed: {e}")
             return False
 
+    def _is_localhost_mlflow_running(self) -> bool:
+        """
+        ✅ NEW: Check if MLflow is running on localhost:5000
+        """
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            result = sock.connect_ex(('localhost', 5000))
+            sock.close()
+
+            is_running = result == 0
+            if is_running:
+                logger.info("✓ MLflow detected at localhost:5000")
+            else:
+                logger.info("MLflow not running at localhost:5000")
+            return is_running
+
+        except Exception as e:
+            logger.info(f"Localhost MLflow check failed: {e}")
+            return False
+
+    def _detect_environment(self) -> str:
+        """
+        ✅ NEW: Detect the environment we're running in
+        """
+        # Check for Docker environment indicators
+        if (os.path.exists('/.dockerenv') or
+            os.environ.get('AIRFLOW_HOME') or
+            os.path.exists('/opt/airflow')):
+            return "docker"
+
+        # Check if we're in a development environment
+        if os.path.exists('.env') or os.path.exists('docker-compose.yml'):
+            return "development"
+
+        return "local"
+
+    def get_mlflow_config(self) -> Dict[str, Any]:
+        """
+        ✅ IMPROVED: Get MLFlow configuration with comprehensive environment detection
+        """
+        # Start with base config from YAML
+        base_config = self.get('model_training.mlflow', {})
+
+        # Priority 1: Environment variable (highest priority)
+        env_uri = os.environ.get('MLFLOW_TRACKING_URI')
+        if env_uri:
+            tracking_uri = env_uri
+            logger.info(f"Using MLflow URI from environment variable: {env_uri}")
+        else:
+            # Priority 2: Auto-detect based on environment
+            env_type = self._detect_environment()
+            logger.info(f"Detected environment: {env_type}")
+
+            if env_type == "docker":
+                # We're in Docker - check if MLflow service is available
+                if self._is_docker_compose_running():
+                    tracking_uri = "http://mlflow:5000"
+                    logger.info("✓ Using Docker Compose MLflow service: mlflow:5000")
+                else:
+                    # In Docker but MLflow service not available - use file tracking
+                    tracking_uri = "./mlflow_runs"
+                    logger.info("⚠️  Docker environment but MLflow service unavailable - using file tracking")
+            else:
+                # We're in local/development environment
+                if self._is_localhost_mlflow_running():
+                    tracking_uri = "http://localhost:5000"
+                    logger.info("✓ Using local MLflow server: localhost:5000")
+                else:
+                    # No MLflow server available - use file tracking
+                    tracking_uri = "./mlflow_runs"
+                    logger.info("⚠️  No MLflow server available - using file tracking")
+
+        # Build MLflow config with additional metadata
+        mlflow_config = {
+            'tracking_uri': tracking_uri,
+            'experiment_name': os.environ.get('MLFLOW_EXPERIMENT_NAME',
+                                            base_config.get('experiment_name', 'obesity_risk_classification')),
+            'backend_store_uri': base_config.get('backend_store_uri', './mlflow/runs'),
+            'default_artifact_root': base_config.get('default_artifact_root', './mlflow/artifacts'),
+            'is_server_mode': tracking_uri.startswith('http'),  # ✅ NEW: Track if using server
+            'environment_detected': self._detect_environment(),  # ✅ NEW: Track detected environment
+            'auto_detected': env_uri is None,  # ✅ NEW: Track if URI was auto-detected
+        }
+
+        logger.info("✓ MLflow configuration resolved:")
+        logger.info(f"  URI: {mlflow_config['tracking_uri']}")
+        logger.info(f"  Experiment: {mlflow_config['experiment_name']}")
+        logger.info(f"  Server mode: {mlflow_config['is_server_mode']}")
+
+        return mlflow_config
+
+    # ✅ NEW: Helper method to safely setup MLflow in other modules
+    def setup_mlflow(self):
+        """
+        Setup MLflow with the configuration from this loader.
+        Returns True if successful, False otherwise.
+        """
+        try:
+            import mlflow
+
+            config = self.get_mlflow_config()
+            mlflow.set_tracking_uri(config['tracking_uri'])
+
+            # Try to set experiment if using server mode
+            if config['is_server_mode']:
+                try:
+                    mlflow.set_experiment(config['experiment_name'])
+                    logger.info(f"✓ MLflow experiment set: {config['experiment_name']}")
+                except Exception as e:
+                    logger.warning(f"Could not set MLflow experiment: {e}")
+                    return False
+
+            logger.info(f"✓ MLflow setup successful with URI: {config['tracking_uri']}")
+            return True
+
+        except ImportError:
+            logger.error("MLflow not installed")
+            return False
+        except Exception as e:
+            logger.error(f"MLflow setup failed: {e}")
+            return False
+
+    # ... [rest of your methods remain the same]
     def get(self, key_path: str, default: Any = None) -> Any:
         """
         Get configuration value using dot notation.
@@ -174,77 +297,6 @@ class ConfigLoader:
         """Get model training configuration."""
         return self.get('model_training')
 
-    def get_mlflow_config(self) -> Dict[str, Any]:
-        """
-        Get MLFlow configuration with simple Docker Compose detection.
-        Uses mlflow:5000 when Docker Compose is up, localhost:5000 otherwise.
-        """
-        # Start with base config from YAML
-        base_config = self.get('model_training.mlflow', {})
-
-        # Check if environment variable is set (highest priority)
-        env_uri = os.environ.get('MLFLOW_TRACKING_URI')
-        if env_uri:
-            tracking_uri = env_uri
-            print(f"✓ Using MLflow URI from environment: {env_uri}")
-        else:
-            # Auto-detect based on Docker Compose status
-            if self._is_docker_compose_running():
-                tracking_uri = "http://mlflow:5000"
-                print("✓ Docker Compose detected - using mlflow:5000")
-            else:
-                tracking_uri = "http://localhost:5000"
-                print("✓ Docker Compose not running - using localhost:5000")
-
-        # Build MLflow config
-        mlflow_config = {
-            'tracking_uri': tracking_uri,
-            'experiment_name': os.environ.get('MLFLOW_EXPERIMENT_NAME',
-                                            base_config.get('experiment_name', 'obesity_risk_classification')),
-            'backend_store_uri': base_config.get('backend_store_uri', 'mlflow/runs'),
-            'default_artifact_root': base_config.get('default_artifact_root', '/mlflow/artifacts')
-        }
-
-        return mlflow_config
-    # def get_mlflow_config(self) -> Dict[str, Any]:
-    #     """
-    #     Get MLFlow configuration with Docker environment detection.
-    #     ✅ NEW: Docker-aware MLflow configuration
-    #     """
-    #     # Start with base config from YAML
-    #     base_config = self.get('model_training.mlflow', {})
-
-    #     # Method 1: Check if MLflow URI is set by Airflow DAG (highest priority)
-    #     env_uri = os.environ.get('MLFLOW_TRACKING_URI')
-    #     if env_uri:
-    #         print(f"✓ Using MLflow URI from environment variable: {env_uri}")
-    #         tracking_uri = env_uri
-    #     else:
-    #         # Method 2: Detect environment and set appropriate URI
-    #         if self._detect_docker_environment():
-    #             tracking_uri = "http://mlflow:5000"
-    #             print("✓ Docker environment detected, using MLflow service name")
-    #         else:
-    #             # Use config file value or default to localhost
-    #             tracking_uri = base_config.get('tracking_uri', 'http://localhost:5000')
-    #             print("✓ Local environment detected, using localhost")
-
-    #     # Build enhanced MLflow config
-    #     mlflow_config = {
-    #         'tracking_uri': tracking_uri,
-    #         'experiment_name': os.environ.get('MLFLOW_EXPERIMENT_NAME',
-    #                                         base_config.get('experiment_name', 'obesity_risk_classification')),
-    #         'backend_store_uri': os.environ.get('MLFLOW_BACKEND_STORE_URI',
-    #                                           base_config.get('backend_store_uri')),
-    #         'default_artifact_root': os.environ.get('MLFLOW_DEFAULT_ARTIFACT_ROOT',
-    #                                                base_config.get('default_artifact_root', '/mlflow/artifacts')),
-    #         # Preserve any other config from YAML
-    #         **{k: v for k, v in base_config.items() if k not in ['tracking_uri', 'experiment_name']}
-    #     }
-
-    #     print(f"✓ MLflow config resolved: tracking_uri={mlflow_config['tracking_uri']}, experiment={mlflow_config['experiment_name']}")
-    #     return mlflow_config
-
     def get_hyperparameters(self) -> Dict[str, Any]:
         """Get model hyperparameters."""
         return self.get('model_training.hyperparameters')
@@ -302,22 +354,18 @@ class ConfigLoader:
         print(f"  Numerical ({len(self.get_numerical_features())}): {self.get_numerical_features()}")
         print(f"  Categorical ({len(self.get_categorical_features())}): {self.get_categorical_features()}")
 
+        print("\nMLflow Configuration:")
+        mlflow_config = self.get_mlflow_config()
+        print(f"  Tracking URI: {mlflow_config['tracking_uri']}")
+        print(f"  Experiment: {mlflow_config['experiment_name']}")
+        print(f"  Server mode: {mlflow_config['is_server_mode']}")
+        print(f"  Environment: {mlflow_config['environment_detected']}")
+
         print("\nSplit configuration:")
         split_config = self.get_split_config()
         print(f"  Test size: {split_config['test_size']}")
         print(f"  Random state: {split_config['random_state']}")
         print(f"  Stratify: {split_config['stratify']}")
-
-        print("\nDrift configuration:")
-        drift_config = self.get_drift_config()
-        print(f"  Numerical train method: {drift_config['numerical']['train']['method']}")
-        print(f"  Categorical train flip: {drift_config['categorical']['train']['flip_percentage']*100}%")
-
-        print("\nModel training configuration:")
-        model_config = self.get_model_training_config()
-        print(f"  MLFlow URI: {model_config['mlflow']['tracking_uri']}")
-        print(f"  Hyperparameters: {model_config['hyperparameters']}")
-        print(f"  Model save path: {model_config['artifacts']['model_save_path']}")
 
 # Global config instance (singleton pattern)
 _config_instance = None
@@ -370,9 +418,18 @@ def get_target_column() -> str:
     """Get target column name from global config."""
     return get_config().get('dataset.target.target_column')
 
+# ✅ NEW: Convenience function for MLflow setup
+def setup_mlflow() -> bool:
+    """Setup MLflow using global config. Returns True if successful."""
+    return get_config().setup_mlflow()
+
 # Example usage
 if __name__ == "__main__":
     # Test the configuration loader
     config = ConfigLoader(environment="development")
     config.validate_config()
     config.print_summary()
+
+    # Test MLflow setup
+    success = config.setup_mlflow()
+    print(f"MLflow setup successful: {success}")

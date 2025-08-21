@@ -12,7 +12,6 @@ mlflow_config = config.get_mlflow_config()
 
 tracking_uri = mlflow_config.get('tracking_uri', 'http://localhost:5000')
 mlflow.set_tracking_uri(tracking_uri)
-print(f"MLflow URI set to: {tracking_uri}")
 
 def run_complete_pipeline():
     print("="*60)
@@ -46,9 +45,9 @@ def run_complete_pipeline():
             mlflow.log_param("drifted_train_shape", f"{X_train_drifted.shape[0]}x{X_train_drifted.shape[1]}")
             mlflow.log_param("drifted_test_shape", f"{X_test_drifted.shape[0]}x{X_test_drifted.shape[1]}")
 
-            print("  Data preprocessed successfully")
-            print(f"  Original - Train: {X_train.shape}, Test: {X_test.shape}")
-            print(f"  Drifted  - Train: {X_train_drifted.shape}, Test: {X_test_drifted.shape}")
+            print("Data preprocessed successfully")
+            print(f"Original - Train: {X_train.shape}, Test: {X_test.shape}")
+            print(f"Drifted  - Train: {X_train_drifted.shape}, Test: {X_test_drifted.shape}")
 
             # Step 2: Feature Engineering
             print("\n" + "="*40)
@@ -72,9 +71,9 @@ def run_complete_pipeline():
             mlflow.log_param("engineered_test_shape", f"{X_test_eng.shape[0]}x{X_test_eng.shape[1]}")
             mlflow.log_param("feature_engineering_applied", True)
 
-            print("  Feature engineering completed")
-            print(f"  Original Engineered - Train: {X_train_eng.shape}, Test: {X_test_eng.shape}")
-            print(f"  Drifted Engineered  - Train: {X_train_drift_eng.shape}, Test: {X_test_drift_eng.shape}")
+            print("Feature engineering completed")
+            print(f"Original Engineered - Train: {X_train_eng.shape}, Test: {X_test_eng.shape}")
+            print(f"Drifted Engineered  - Train: {X_train_drift_eng.shape}, Test: {X_test_drift_eng.shape}")
 
             # Step 3: Model Training
             print("\n" + "="*40)
@@ -84,9 +83,6 @@ def run_complete_pipeline():
             from src.model_training import train_model
 
             model = train_model(X_train=X_train_eng, y_train=y_train_eng, use_existing_run=True)
-
-            print("  Model trained successfully")
-            print(f"  Model type: {type(model).__name__}")
 
             # Step 4: Model Evaluation
             print("\n" + "="*40)
@@ -114,10 +110,10 @@ def run_complete_pipeline():
             mlflow.log_metric("accuracy_drop_due_to_drift", accuracy_drop)
             mlflow.log_metric("f1_drop_due_to_drift", f1_drop)
 
-            print("  Model evaluation completed")
-            print(f"  Original - Accuracy: {original_results['accuracy']:.4f}, F1: {original_results['f1_score']:.4f}")
-            print(f"  Drifted  - Accuracy: {drifted_results['accuracy']:.4f}, F1: {drifted_results['f1_score']:.4f}")
-            print(f"  Performance drop - Accuracy: {accuracy_drop:.4f}, F1: {f1_drop:.4f}")
+            print("Model evaluation completed")
+            print(f"Original - Accuracy: {original_results['accuracy']:.4f}, F1: {original_results['f1_score']:.4f}")
+            print(f"Drifted  - Accuracy: {drifted_results['accuracy']:.4f}, F1: {drifted_results['f1_score']:.4f}")
+            print(f"Performance drop - Accuracy: {accuracy_drop:.4f}, F1: {f1_drop:.4f}")
 
             # Step 5: Performance Threshold Check and Model Registration
             print("\n" + "="*40)
@@ -140,10 +136,10 @@ def run_complete_pipeline():
 
                 try:
                     mlflow.register_model(model_uri, model_name)
-                    print("   Model registered successfully!")
-                    print(f"   Model name: {model_name}")
-                    print(f"   Model URI: {model_uri}")
-                    print(f"   Threshold: {threshold_desc} ✓")
+                    print("Model registered successfully!")
+                    print(f"Model name: {model_name}")
+                    print(f"Model URI: {model_uri}")
+                    print(f"Threshold: {threshold_desc} ✓")
                     try:
                         mlflow.set_tag("model_registered", "true")
                         mlflow.set_tag("model_name", model_name)
@@ -159,9 +155,9 @@ def run_complete_pipeline():
                         print(f"Warning: Could not log registration failure: {log_error}")
                     model_registered = False
             else:
-                print("   Model does not meet performance threshold")
-                print(f"   Current accuracy: {original_results['accuracy']:.4f}")
-                print(f"   Required: {threshold_desc}")
+                print("Model does not meet performance threshold")
+                print(f"Current accuracy: {original_results['accuracy']:.4f}")
+                print(f"Required: {threshold_desc}")
                 try:
                     mlflow.set_tag("model_registered", "false")
                     mlflow.set_tag("threshold_not_met_reason", f"accuracy_{original_results['accuracy']:.4f}_required_{threshold_desc}")
@@ -196,11 +192,6 @@ def run_complete_pipeline():
             except Exception as log_error:
                 print(f"Warning: Could not log feature drift scores: {log_error}")
 
-            print("  Drift detection completed")
-            print(f"  Drift detected: {test_drift_results['drift_detected']}")
-            print(f"  Overall drift score: {test_drift_results['overall_drift_score']:.4f}")
-            print(f"  Feature drifts: {test_drift_results['feature_drifts']}")
-
             # Save comprehensive evaluation results to JSON
             comprehensive_results = {
                 "original_data_evaluation": original_results,
@@ -226,12 +217,12 @@ def run_complete_pipeline():
             with open("reports/evaluation_results.json", 'w') as f:
                 json.dump(comprehensive_results, f, indent=2)
 
-            print("\n✓ Comprehensive results saved to: reports/evaluation_results.json")
+            print("Comprehensive results saved to: reports/evaluation_results.json")
 
             # Raise error if drift detected
             if test_drift_results["drift_detected"]:
                 error_msg = "Data drift detected in test set! Model retraining required."
-                print(f"\n{error_msg}")
+                print(f"{error_msg}")
 
                 # Log the error to MLFlow using tags instead of params to avoid conflicts
                 try:
@@ -300,7 +291,6 @@ def run_pipeline_with_error_handling():
     Handles the expected drift detection error.
     """
     try:
-        print("Starting ML Pipeline...")
         results = run_complete_pipeline()
 
         print("\n" + "="*60)
@@ -316,11 +306,9 @@ def run_pipeline_with_error_handling():
     except ValueError as e:
         if "Data drift detected" in str(e):
             print("\n" + "="*60)
-            print("EXPECTED DRIFT DETECTION ERROR")
+            print("DRIFT DETECTION ERROR")
             print("="*60)
-            print(f"Expected behavior: {e}")
-            print("This demonstrates drift detection working correctly!")
-            print("Pipeline raises error when drift is detected")
+            print(f"{e}")
             print("="*60)
 
             return {
@@ -365,9 +353,7 @@ def main():
     except Exception as e:
         print(f"MLFlow connection issue: {e}")
         print("Make sure MLFlow server is running:")
-        print("   mlflow server --host 127.0.0.1 --port 5000")
-
-    print("\nStarting pipeline execution...")
+        print("mlflow server --host 127.0.0.1 --port 5000")
 
     results = run_pipeline_with_error_handling()
 

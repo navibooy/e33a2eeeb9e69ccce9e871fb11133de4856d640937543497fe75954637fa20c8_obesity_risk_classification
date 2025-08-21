@@ -4,12 +4,21 @@
     "data_drift_detected",
     "performance_threshold_not_met"
   ],
-  "new_mlflow_run_id": "d09aa852cade4a72aad41d5a2660de11",
-  "retrain_timestamp": "2025-08-21T00:54:48.460044",
+  "new_mlflow_run_id": "38de0c30d9344a24bc9cd419ae737cb3",
+  "retrain_timestamp": "2025-08-21T12:26:16.083324",
   "retrained_data_shape": [
     32652,
     14
   ],
-  "retrain_time_seconds": 10.749385,
-  "drift_score": 0.7562445982761558
+  "retrain_time_seconds": 16.831006,
+  "drift_score": 0.7562445982761558,
+  "mlflow_config_used": {
+    "tracking_uri": "http://mlflow:5000",
+    "experiment_name": "obesity_risk_classification",
+    "backend_store_uri": "file:./mlflow/runs",
+    "default_artifact_root": "./mlflow/artifacts",
+    "is_server_mode": true,
+    "environment_detected": "docker",
+    "auto_detected": false
+  }
 }

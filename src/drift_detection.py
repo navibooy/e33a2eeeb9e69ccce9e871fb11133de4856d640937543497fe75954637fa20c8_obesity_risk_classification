@@ -44,7 +44,7 @@ def detect_drift(reference_data_path: str, current_data_path: str) -> Dict[str, 
     reference_features = reference_data[feature_columns]
     current_features = current_data[feature_columns]
 
-    print(f"  Feature columns: {len(feature_columns)} features")
+    print(f"Feature columns: {len(feature_columns)} features")
 
     # Try Evidently first, fallback to statistical methods
     try:

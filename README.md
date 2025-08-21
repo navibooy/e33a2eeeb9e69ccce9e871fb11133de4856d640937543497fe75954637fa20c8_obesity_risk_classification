@@ -7,11 +7,7 @@
 - [MLFlow Integration](#mlflow-integration)
 - [Model Drift Detection](#model-drift-detection)
 - [Folder Structure](#folder-structure)
-- [Docker Integration](#docker-integration)
-- [Airflow DAG](#airflow-dag)
-- [Pre-commit Configuration](#pre-commit-configuration)
 - [Testing Instructions](#testing-instructions)
-- [Optional: Unit Testing with Pytest](#optional-unit-testing-with-pytest)
 - [Reflection - HW3](#reflection---hw3)
 
 ## Project Overview
@@ -23,14 +19,15 @@ This project utilizes Docker to ensure environment consistency by encapsulating 
 
 ## How to Get the Data
 1. Visit the competition page on Kaggle:
-👉 https://www.kaggle.com/competitions/playground-series-s4e2/data
-2. Download `train.csv` and place it inside the following directory:
+👉 https://www.kaggle.com/competitions/playground-series-s4e2/data or,
+2. Simply run the following command below:
 ```bash
-data/raw/obesity_data.csv
+python src/data_ingestion.py
 ```
 
 ## Setup Instructions
 
+### Method 1: Run ML Pipeline Using Docker Setup
 ### Prerequisites
 - **Docker**: Version 20.10+ with Docker Compose support
 - **Python**: Version 3.10+ (for local development)
@@ -41,7 +38,9 @@ data/raw/obesity_data.csv
 Clone the repository and checkout the hw3-mlflow-drift branch:
 ```bash
 git clone https://github.com/navibooy/e33a2eeeb9e69ccce9e871fb11133de4856d640937543497fe75954637fa20c8_obesity_risk_classification.git
+
 cd e33a2eeeb9e69ccce9e871fb11133de4856d640937543497fe75954637fa20c8_obesity_risk_classification
+
 git checkout hw3-mlflow-drift
 ```
 
@@ -57,47 +56,14 @@ Start all services including MLflow, Airflow, PostgreSQL, and Redis:
 docker-compose -f deploy/docker/docker-compose.yaml up -d
 ```
 
-### Step 4: Service Verification
-Verify all services are running correctly:
-```bash
-# Check container status
-docker-compose -f deploy/docker/docker-compose.yaml ps
-
-# Test MLflow service
-curl -f http://localhost:5000/health || echo "MLflow not ready"
-
-# Test Airflow service
-curl -f http://localhost:8080/health || echo "Airflow not ready"
-```
-
-### Step 5: UI Access
+### Step 4: UI Access
 - **MLflow UI**: http://localhost:5000 - View experiments, runs, and model registry
 - **Airflow UI**: http://localhost:8080 - Monitor DAG execution and task logs
   - Username: `airflow`
   - Password: `airflow`
 
-### Environment Variables (Optional)
-Configure these environment variables for customization:
-```bash
-export MLFLOW_TRACKING_URI=http://localhost:5000
-export MLFLOW_EXPERIMENT_NAME=obesity_risk_classification
-export DRIFT_THRESHOLD=0.5
-```
-
-### Troubleshooting Common Issues
-If services fail to start:
-```bash
-# View logs for specific service
-docker-compose -f deploy/docker/docker-compose.yaml logs mlflow
-docker-compose -f deploy/docker/docker-compose.yaml logs airflow-webserver
-
-# Reset and rebuild
-docker-compose -f deploy/docker/docker-compose.yaml down -v
-docker-compose -f deploy/docker/docker-compose.yaml up --build -d
-
-# Check port conflicts
-netstat -tulpn | grep -E ":(5000|8080|5432|6379)"
-```
+### Step 5: Trigger DAG in Airflow UI
+Navigate to Airflow UI and go to Dags, click on ml_pipeline_dag, and proceed with Trigger DAG.
 
 ## MLFlow Integration
 
@@ -157,7 +123,7 @@ Navigate to http://localhost:5000 to access the MLflow web interface.
 - **Artifacts Tab**: Access model files, feature mappings, and metadata
 - **Tags**: Run metadata including environment detection and drift status
 
-### Local Development Setup (Alternative)
+### Method 2: Local Development Setup (Alternative)
 For local development without Docker:
 
 ```bash
@@ -175,6 +141,10 @@ uv pip install -r pyproject.toml
 
 # Install pre-commit hooks
 pre-commit install
+
+
+# Ensure that the port is running
+mlflow server --host 127.0.0.1 --port 5000
 
 # Run pipeline locally
 python src/run_pipeline.py
@@ -225,65 +195,20 @@ The project implements a comprehensive drift detection system using the Evidentl
 
 The enhanced folder structure for HW3 introduces several critical directories that support the complete ML lifecycle from development to production monitoring. The `mlflow/` directory with its `runs/` and `artifacts/` subdirectories provides centralized experiment tracking and model versioning, enabling reproducible research and systematic hyperparameter optimization. The `reports/` directory has been expanded to accommodate drift detection outputs and comparative analysis between original and drifted model performance, facilitating comprehensive model monitoring. The `src/` structure now includes `drift_detection.py` for automated data drift simulation and detection, implementing real-world monitoring capabilities that are essential for production ML systems. The `models/` directory integrates seamlessly with MLflow for both local model storage and remote artifact management. The `airflow_results/` directory enables robust inter-task communication and provides persistent storage for pipeline outputs, supporting complex workflow orchestration. The `config/` directory centralizes environment detection and configuration management, ensuring smooth transitions between development and production environments. This separation of concerns between data management, model artifacts, monitoring outputs, and metadata creates a scalable architecture that supports collaborative development, automated testing, and production deployment while maintaining clear data lineage and experiment reproducibility essential for enterprise ML operations.
 
-# Docker Integration
-This project uses two Dockerfiles and a centralized `docker-compose.yaml` file to manage reproducible environments for both ML pipeline execution and workflow orchestration.
-
-`pipeline.Dockerfile`: Defines a minimal image for running `src/run_pipeline.py` outside of Airflow. This allows testing the ML logic independently using bind-mounted volumes for data, models, and reports.
-
-`airflow.Dockerfile`: Extends the official `apache/airflow` image and installs required Python dependencies via `uv`. It's used in `docker-compose.yaml` to launch the Airflow services.
-
-`docker-compose.yaml`: Coordinates multiple containers including Airflow webserver, scheduler, triggerer, PostgreSQL (metadata DB), and Redis (trigger event queue). It also mounts shared volumes (e.g., `data/`, `models/`, `reports/`) into `/opt/airflow` so all tasks can access input/output consistently across services.
-
-This modular Docker strategy enables:
-- Environment consistency across dev/staging/production
-- Reusable pipeline code
-- Clear separation between orchestration logic and ML model logic
-
-# Airflow DAG
-The DAG (`ml_pipeline_dag`) is defined in `deploy/airflow/ml_pipeline_dag.py` and manages the ML workflow as a sequence of Python-based tasks using `PythonOperator`.
-
-## DAG Structure:
-1. `preprocess_data` – Cleans and prepares the raw CSV data.
-2. `feature_engineering` – Splits, transforms, and optionally resamples the data.
-3. `train_model` – Trains and saves the XGBoost model.
-4. `evaluate_model` – Logs classification metrics and saves a confusion matrix.
-
-These tasks are dependent on one another and executed in order using task chaining:
-`preprocess_data >> feature_engineering >> train_model >> evaluate_model`
-
-## Scheduling Rationale:
-- The DAG is currently set to run manually (no fixed schedule) to facilitate iterative testing in development.
-- catchup=False is used to avoid backfilling.
-- Each task is idempotent and supports retry mechanisms by design.
-
-# Pre-commit Configuration
-I used pre-commit to enforce code quality and consistency automatically before every commit. This ensures that all contributors follow the same standards, and the codebase stays clean, readable, and production-ready.
-
-Hooks used:
-
-`ruff`: A fast Python linter that checks for stylistic errors, unused imports, and other issues. It is configured to auto-fix and return a non-zero exit if changes were made.
-
-`pre-commit-hooks`: Includes general-purpose checks like fixing trailing whitespace, enforcing end-of-file newlines, validating YAML and TOML syntax, and detecting large files.
-
-`yamllint`: Enforces consistent YAML formatting (e.g., indentation, line length) across .yaml and .yml files.
-
-To enable and run pre-commit hooks:
-```bash
-pre-commit install
-pre-commit run --all-files
-```
-Make sure you have all dependencies installed and your `.pre-commit-config.yaml` file is correctly defined at the project root.
-
 ## Testing Instructions
 
 ### 1. Standalone Pipeline Testing
 Test the complete ML pipeline outside of Airflow:
 ```bash
+# Ensure that the port is running
+mlflow server --host 127.0.0.1 --port 5000
+
 # Run complete pipeline (expect drift error message for demonstration)
 python src/run_pipeline.py
 ```
 
-**Expected Output**: The pipeline will execute successfully but display a drift detection error message, demonstrating the drift monitoring system.
+**Expected Output**: The pipeline will execute successfully but display a drift detection error message, demonstrating the drift monit
+oring system.
 
 **Success Indicators**:
 - All preprocessing steps complete without errors
@@ -295,29 +220,8 @@ python src/run_pipeline.py
 
 **DAG Syntax Verification**:
 ```bash
-# Test DAG syntax and structure
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow dags test ml_pipeline_dag 2025-08-20
-```
-
-**Individual Task Testing**:
-```bash
-# Test preprocessing task
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test ml_pipeline_dag preprocess_data 2025-08-20
-
-# Test feature engineering task
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test ml_pipeline_dag feature_engineering 2025-08-20
-
-# Test model training task
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test ml_pipeline_dag train_model 2025-08-20
-
-# Test drift detection task
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow tasks test ml_pipeline_dag drift_detection 2025-08-20
-```
-
-**Full DAG Trigger**:
-```bash
-# Trigger complete DAG execution
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airflow dags trigger ml_pipeline_dag
+# Test DAG structure
+airflow dags test ml_pipeline_dag 2025-08-20
 ```
 
 ### 3. MLflow Verification
@@ -326,14 +230,6 @@ docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler airfl
 ```bash
 # Test MLflow API health
 curl -f http://localhost:5000/health
-
-# List experiments
-curl -X GET http://localhost:5000/api/2.0/mlflow/experiments/list
-
-# Get experiment by name
-curl -X POST http://localhost:5000/api/2.0/mlflow/experiments/get-by-name \
-  -H "Content-Type: application/json" \
-  -d '{"experiment_name": "obesity_risk_classification"}'
 ```
 
 **UI Verification Checklist**:
@@ -343,75 +239,23 @@ curl -X POST http://localhost:5000/api/2.0/mlflow/experiments/get-by-name \
 - [ ] Verify metrics are logged: `accuracy`, `f1_score`, and their variants
 - [ ] Confirm artifacts are stored: model files and feature mappings
 
-### 4. Component Testing
-
-**Individual Module Testing**:
-```bash
-# Test preprocessing module
-python -m pytest tests/test_data_preprocessing.py -v
-
-# Test feature engineering module
-python -m pytest tests/test_feature_engineering.py -v
-
-# Run all unit tests
-pytest -v --tb=short
-```
-
-**Drift Detection Testing**:
-```bash
-# Test drift detection functionality directly
-python -c "
-from src.drift_detection import simulate_drift, detect_drift
-import pandas as pd
-data = pd.read_csv('data/splits/train.csv')
-drifted = simulate_drift(data)
-drift_detected, score = detect_drift(data, drifted)
-print(f'Drift detected: {drift_detected}, Score: {score}')
-"
-```
-
-**Docker Container Communication Tests**:
-```bash
-# Test container network connectivity
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler ping -c 3 mlflow
-docker-compose -f deploy/docker/docker-compose.yaml exec airflow-scheduler ping -c 3 postgres
-docker-compose -f deploy/docker/docker-compose.yaml exec mlflow ping -c 3 postgres
-```
-
-### 5. Validation Checklist
+### 4. Validation Checklist
 
 Complete HW3 requirements verification:
 
-- [ ] **Docker Setup**: All containers start successfully
-- [ ] **MLflow Integration**: Experiment tracking works with 3 parameters and 2 metrics
-- [ ] **Drift Detection**: System simulates and detects drift correctly
-- [ ] **Airflow DAG**: All tasks execute without errors
-- [ ] **UI Access**: Both MLflow (port 5000) and Airflow (port 8080) UIs accessible
-- [ ] **Model Registration**: Models are logged with custom PyFunc wrapper
-- [ ] **Artifact Storage**: Model artifacts and metadata stored correctly
-- [ ] **Environment Detection**: System correctly identifies Docker vs local environment
-- [ ] **Inter-task Communication**: XCom and file-based communication working
-- [ ] **Error Handling**: Graceful handling of MLflow connection issues
-- [ ] **Drift Simulation**: Numerical and categorical drift simulation functional
-- [ ] **Automated Retraining**: Drift detection triggers appropriate responses
-- [ ] **Data Lineage**: Clear tracking from raw data through model artifacts
-
-# Optional: Unit Testing with Pytest
-This project uses `pytest` for unit testing to ensure code correctness and stability.
-
-### Step 1: Install Pytest (if not yet installed)
-```bash
-uv add --dev pytest
-```
-### Step 2: Run Tests
-Run all test:
-```bash
-pytest
-```
-OR add verbosity for clearer output:
-```bash
-pytest -v --tb=short
-```
+- [✅] **Docker Setup**: All containers start successfully
+- [✅] **MLflow Integration**: Experiment tracking works with 3 parameters and 2 metrics
+- [✅] **Drift Detection**: System simulates and detects drift correctly
+- [✅] **Airflow DAG**: All tasks execute without errors
+- [✅] **UI Access**: Both MLflow (port 5000) and Airflow (port 8080) UIs accessible
+- [✅] **Model Registration**: Models are logged with custom PyFunc wrapper
+- [✅] **Artifact Storage**: Model artifacts and metadata stored correctly
+- [✅] **Environment Detection**: System correctly identifies Docker vs local environment
+- [✅] **Inter-task Communication**: XCom and file-based communication working
+- [✅] **Error Handling**: Graceful handling of MLflow connection issues
+- [✅] **Drift Simulation**: Numerical and categorical drift simulation functional
+- [✅] **Automated Retraining**: Drift detection triggers appropriate responses
+- [✅] **Data Lineage**: Clear tracking from raw data through model artifacts
 
 ## Reflection - HW3
 
