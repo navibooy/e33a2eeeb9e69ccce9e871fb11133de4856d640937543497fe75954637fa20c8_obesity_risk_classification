@@ -262,13 +262,10 @@ Complete HW3 requirements verification:
 ### Challenges Encountered
 
 **MLflow Container Communication Issues:**
-The most significant challenge involved establishing proper communication between Airflow tasks and the MLflow tracking server. Initially, tasks failed when attempting to connect to MLflow using `localhost:5000` from within Docker containers. The issue stemmed from container networking where `localhost` refers to the container's internal network rather than the host machine. This required implementing smart environment detection to use `mlflow:5000` for container-to-container communication versus `localhost:5000` for local development.
+Working on this homework, I've spent most of my significant time in establishing proper communication between Airflow tasks and the MLflow tracking server. Initially, tasks failed when attempting to connect to MLflow using `localhost:5000` from within Docker containers. The issue stemmed from container networking where `localhost` refers to the container's internal network rather than the host machine. This required implementing smart environment detection to use `mlflow:5000` for container-to-container communication versus `localhost:5000` for local development.
 
 **Parameter Logging Failures and Silent Errors:**
 MLflow parameter logging initially failed silently, making debugging extremely challenging. The system appeared to function correctly but parameters weren't being logged to experiments. Investigation revealed that MLflow run context wasn't properly established before logging calls, and error handling wasn't comprehensive enough to surface these failures. Additionally, parameter validation wasn't occurring, leading to type mismatches and formatting issues that caused silent failures.
-
-**Docker Environment Detection Complexity:**
-Differentiating between Docker and local execution environments proved more complex than anticipated. Simple environment variable checks were insufficient because multiple execution contexts existed: local development, Docker Compose orchestration, and Airflow container execution. Each context required different configuration approaches for MLflow connectivity, file paths, and service discovery.
 
 **Airflow XCom Authentication Issues:**
 Airflow version 3.0.3 introduced stricter authentication requirements for XCom operations, causing inter-task communication failures. Tasks couldn't access XCom data due to permission restrictions and authentication token management issues, breaking the pipeline's data flow between preprocessing, training, and evaluation stages.
@@ -278,15 +275,13 @@ Airflow version 3.0.3 introduced stricter authentication requirements for XCom o
 **Smart Environment Detection System:**
 Developed a comprehensive environment detection system in `config_loader.py` that analyzes multiple indicators including environment variables (`DOCKER_ENV`), hostname patterns, filesystem characteristics, and network connectivity tests. This system dynamically configures MLflow tracking URIs and communication protocols based on the detected environment, ensuring seamless operation across development and production contexts.
 
-**MLflow Run Context Verification and Error Handling:**
-Implemented robust MLflow run context management with explicit verification before any logging operations. Added comprehensive error handling that captures and logs MLflow connection failures, parameter type mismatches, and silent errors. Introduced run context validation that ensures active runs exist before attempting parameter or metric logging, with automatic run creation when necessary.
+**Comprehensive Logging and Monitoring:**
+Enhanced the entire pipeline with structured logging that provides visibility into MLflow connectivity status, parameter logging success/failure, drift detection results, and inter-task communication methods. Added health checks and diagnostic commands that enable proactive identification of configuration issues before they impact pipeline execution.
 
 **Dual Communication Strategy:**
 Architected a dual communication strategy using both XCom and file-based fallbacks for inter-task data sharing. When XCom authentication fails, the system automatically falls back to JSON file storage in the `airflow_results/` directory, ensuring pipeline continuity regardless of XCom authentication status. This approach provides resilience against Airflow version-specific authentication changes.
 
-**Comprehensive Logging and Monitoring:**
-Enhanced the entire pipeline with structured logging that provides visibility into MLflow connectivity status, parameter logging success/failure, drift detection results, and inter-task communication methods. Added health checks and diagnostic commands that enable proactive identification of configuration issues before they impact pipeline execution.
 
-### Technical Improvements and Architecture Decisions
+### Final Thoughts
 
-The HW3 implementation introduced several architectural improvements including centralized configuration management, environment-aware service discovery, and fault-tolerant inter-service communication. The decision to implement custom PyFunc wrappers for MLflow model registration enabled standardized deployment interfaces while maintaining preprocessing pipeline integration. The choice to use Evidently for drift detection provided statistical rigor while remaining computationally efficient for production monitoring. These decisions collectively created a robust, scalable ML pipeline capable of handling real-world production challenges including service failures, network partitions, and version compatibility issues. The experience reinforced the importance of comprehensive error handling, environment abstraction, and graceful degradation in distributed ML systems.
+Overall this homework helped me to understand how to configure MLFlow and Airflow. I've taken a significant time in fixing the source codes for the main pipeline, updating the docker-compose.yaml to ensure that the folder structure is captured, and try to understand a bit of computer networking to ensure that both Airflow and MLflow can be accessed properly. At the end of the day, this highlights how Data Science and MLOps are connected to make sure that models are deployed in the real-world.
